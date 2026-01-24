@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>WalkiePal – VA Demo</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+</div>
+<body>
+
+<!-- SCREEN 0: EXPLANATION -->
+<div id="screen-explanation" class="app">
+  <header class="header">
+    <h1>WalkiePal</h1>
+    <p class="subtitle">
+      Take a step towards friendship and fitness—find a walking partner near you.<br>
+      Tap 'Next' to continue.
+    </p>
+  </header>
+  <section class="section" style="text-align:center;">
+    <button onclick="goToFind()">Next ➡️</button>
+  </section>
+</div>
+
+<!-- SCREEN 1: FIND A WALKING PARTNER -->
+<!-- SEARCH BAR -->
+<div class="search-wrapper">
+  <span class="search-icon">🔍</span>
+  <input type="text" id="buddy-search" placeholder="Who’s nearby? 🥾"/>
+  <button id="toggle-dark-mode">🌙</button>
+</div>
+
+
+
+<div id="screen-find" class="app hidden">
+  <header class="header">
+    <h1>WalkiePal</h1>
+<p class="muted">
+  Walking together helps people stay active and feel less alone.
+</p>
+
+    <p class="subtitle">
+      Find a walking partner nearby in Virginia!
+    </p>
+  </header>
+
+  <section class="section">
+    <h2>Nearby Buddies</h2>
+<p class="muted">
+  Instead of phone calls or sign-up sheets, invitations are handled automatically.
+</p>
+
+    <div id="buddy-list"></div>
+    <small class="hint">Tap a person to invite them</small>
+  </section>
+
+  <section class="section">
+    <h2>Suggested Walking Places in VA 🌳</h2>
+    <div class="spot-card">
+  🌳 Lakeside Park<br/>
+  <span class="muted">
+    Arlington County · Public · Flat paths · Benches to rest
+  </span>
+</div>
+
+    <div class="spot-card">
+  🌲 Mount Vernon Trail<br/>
+  <span class="muted">
+    City of Alexandria · Scenic · Waterfront · Gentle slopes
+  </span>
+</div>
+
+  <div class="spot-card">
+  🏞️ Riverside Park<br/>
+  <span class="muted">
+    City of Richmond · Wide sidewalks · Dog-friendly
+  </span>
+</div>
+
+  </section>
+</div>
+
+<!-- SCREEN 2: OTHER PERSON RESPONDS -->
+<div id="screen-response" class="app hidden">
+  <header class="header">
+    <h1>WalkiePal</h1>
+    <p class="subtitle">This shows what your buddies would see</p>
+  </header>
+
+  <section id="response-list" class="section"></section>
+
+  <section class="section" style="text-align:center;">
+    <button onclick="goToFeedback()">Next ➡️ Feedback</button>
+  </section>
+</div>
+
+<!-- SCREEN 3: FEEDBACK QUESTIONS -->
+<div id="screen-feedback" class="app hidden">
+  <header class="header">
+    <h1>Feedback</h1>
+    <p class="subtitle">We’d love to hear your thoughts!</p>
+  </header>
+
+  <section class="section">
+    <label>1️⃣ Was this demo easy to understand?</label><br/>
+    <select id="q1">
+      <option>Yes, very easy</option>
+      <option>Somewhat easy</option>
+      <option>No, it was confusing</option>
+    </select>
+  </section>
+
+  <section class="section">
+    <label>2️⃣ Would you try walking with a pal?</label><br/>
+    <select id="q2">
+      <option>Yes, definitely</option>
+      <option>Maybe</option>
+      <option>No</option>
+    </select>
+  </section>
+
+  <section class="section">
+    <label>3️⃣ Any suggestions for improvement?</label><br/>
+    <textarea id="q3" rows="3" style="width:100%; border-radius:8px; padding:6px;"></textarea>
+  </section>
+
+  <section class="section" style="text-align:center;">
+    <button onclick="submitFeedback()">Submit Feedback ✅</button>
+  </section>
+</div>
+
+<!-- MESSAGE MODAL -->
+<div id="modal" class="modal hidden">
+  <div class="modal-content">
+    <p id="modal-text"></p>
+    <button onclick="closeModal()">OK</button>
+  </div>
+</div>
+
+<script src="app.js"></script>
+<footer class="footer-note">
+  Walks are suggested in public places. No messaging. No profiles.<br>
+  In real use, this service could be operated by local senior centers or VA health programs.
+</footer>
+
+</body>
+</html>
