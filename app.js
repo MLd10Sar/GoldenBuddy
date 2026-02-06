@@ -135,13 +135,11 @@ function requestWalk(name) {
     responseList.appendChild(card);
   });
 
-  modal.addEventListener('transitionend', function navAfter() {
-    if (!modal.classList.contains("show")) {
-      screenFind.classList.add("hidden");
-      screenResponse.classList.remove("hidden");
-      modal.removeEventListener('transitionend', navAfter);
-    }
-  });
+  setTimeout(() => {
+  screenFind.classList.add("hidden");
+  screenResponse.classList.remove("hidden");
+}, 400);
+
 }
 
 // --------------------
@@ -192,4 +190,5 @@ function submitFeedback() {
   })
   .catch(error => showModal("Oops! There was an error sending feedback."));
 }
+
 
