@@ -1,93 +1,67 @@
-const CACHE_VERSION = "proofflow-v3";
-const STATIC_CACHE = `${CACHE_VERSION}-static`;
-const DYNAMIC_CACHE = `${CACHE_VERSION}-dynamic`;
-
+const CACHE_NAME = "walkiepal-cache-v2";
 const STATIC_ASSETS = [
-  "./",
-  "./index.html",
-  "./style.css",
-  "./manifest.json",
-  "./icon-192.png",
-  "./icon-512.png"
+  "/", // root
+  "/index.html",
+  "/style.css",
+  "/app.js",
+  "/favicon.ico",
+  "/manifest.json"
 ];
 
-/* ---------- INSTALL ---------- */
+// Install: cache static assets
 self.addEventListener("install", event => {
-  self.skipWaiting(); // activate immediately
-
+  console.log("[SW] Installing…");
   event.waitUntil(
-    caches.open(STATIC_CACHE).then(cache => {
-      return cache.addAll(STATIC_ASSETS);
-    })
+    caches.open(CACHE_NAME).then(cache => cache.addAll(STATIC_ASSETS))
   );
+  self.skipWaiting(); // Activate SW immediately
 });
 
-/* ---------- ACTIVATE ---------- */
+// Activate: clean old caches
 self.addEventListener("activate", event => {
+  console.log("[SW] Activating…");
   event.waitUntil(
-    caches.keys().then(keys =>
+    caches.keys().then(keys => 
       Promise.all(
         keys.map(key => {
-          if (!key.startsWith(CACHE_VERSION)) {
+          if (key !== CACHE_NAME) {
+            console.log("[SW] Removing old cache:", key);
             return caches.delete(key);
           }
         })
       )
     )
   );
-
-  self.clients.claim(); // control open tabs
+  self.clients.claim();
 });
 
-/* ---------- FETCH ---------- */
+// Fetch: network-first for app.js/index.html, cache-first for other assets
 self.addEventListener("fetch", event => {
-  const request = event.request;
-  const url = new URL(request.url);
+  const url = new URL(event.request.url);
 
-  /* 🔴 Always revalidate core logic */
-  if (
-    url.pathname.endsWith("index.html") ||
-    url.pathname.endsWith("app.js") ||
-    url.pathname.endsWith(".json")
-  ) {
-    event.respondWith(networkFirst(request));
-    return;
+  if (STATIC_ASSETS.includes(url.pathname) || url.pathname === "/") {
+    // Network-first for core files
+    event.respondWith(
+      fetch(event.request)
+        .then(res => {
+          // update cache
+          const copy = res.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
+          return res;
+        })
+        .catch(() => caches.match(event.request))
+    );
+  } else {
+    // Cache-first for other assets
+    event.respondWith(
+      caches.match(event.request).then(res => res || fetch(event.request))
+    );
   }
-
-  /* 🟢 Static assets: cache first */
-  if (
-    url.pathname.endsWith(".css") ||
-    url.pathname.endsWith(".png") ||
-    url.pathname.endsWith(".svg")
-  ) {
-    event.respondWith(cacheFirst(request));
-    return;
-  }
-
-  /* Default */
-  event.respondWith(networkFirst(request));
 });
 
-/* ---------- STRATEGIES ---------- */
-
-async function networkFirst(request) {
-  try {
-    const fresh = await fetch(request);
-    const cache = await caches.open(DYNAMIC_CACHE);
-    cache.put(request, fresh.clone());
-    return fresh;
-  } catch (e) {
-    const cached = await caches.match(request);
-    return cached || Response.error();
+// Listen for skipWaiting message (used to update SW immediately)
+self.addEventListener("message", event => {
+  if (event.data && event.data.type === "SKIP_WAITING") {
+    self.skipWaiting();
   }
-}
-
-async function cacheFirst(request) {
-  const cached = await caches.match(request);
-  if (cached) return cached;
-
-  const fresh = await fetch(request);
-  const cache = await caches.open(STATIC_CACHE);
-  cache.put(request, fresh.clone());
-  return fresh;
-}
+});
