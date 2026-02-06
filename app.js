@@ -1,29 +1,27 @@
 /***********************
- * MOCK BUDDIES (VA)
+ * MOCK BUDDIES (VA + Interests)
  ***********************/
 const buddies = [
-  { name: "Tom", age: 68, distance: "About a 5-minute walk", location: "Arlington County, VA" },
-  { name: "Linda", age: 72, distance: "About a 7-minute walk", location: "City of Alexandria, VA" },
-  { name: "Robert", age: 65, distance: "About a 10-minute walk", location: "City of Richmond, VA" }
+  { name: "Tom", age: 68, distance: "About a 5-minute walk", location: "Arlington County, VA", interests: ["walking", "chess"] },
+  { name: "Linda", age: 72, distance: "About a 7-minute walk", location: "City of Alexandria, VA", interests: ["walking", "gardening"] },
+  { name: "Robert", age: 65, distance: "About a 10-minute walk", location: "City of Richmond, VA", interests: ["walking", "chess", "reading"] }
 ];
 
 /***********************
  * GLOBAL STATE
  ***********************/
-const invites = {}; // { name: { status, time } }
-let currentScreen = "explanation";
-
-const screens = {
-  explanation: document.getElementById("screen-explanation"),
-  find: document.getElementById("screen-find"),
-  response: document.getElementById("screen-response"),
-  feedback: document.getElementById("screen-feedback")
-};
+const invites = {}; // { name: { status, time, expiresAt } }
+const historyStack = [];
 
 const buddyList = document.getElementById("buddy-list");
-const responseList = document.getElementById("response-list");
 const modal = document.getElementById("modal");
 const modalText = document.getElementById("modal-text");
+
+const screenExplanation = document.getElementById("screen-explanation");
+const screenFind = document.getElementById("screen-find");
+const screenResponse = document.getElementById("screen-response");
+const screenFeedback = document.getElementById("screen-feedback");
+const responseList = document.getElementById("response-list");
 
 /***********************
  * DARK MODE
@@ -40,44 +38,36 @@ darkModeBtn.addEventListener("click", () => {
  * SEARCH FILTER
  ***********************/
 const buddySearch = document.getElementById("buddy-search");
-buddySearch.addEventListener("input", () => {
+buddySearch.addEventListener("input", renderBuddyList);
+
+/***********************
+ * RENDER BUDDY LIST WITH MATCHING & PERSISTENT INVITES
+ ***********************/
+function renderBuddyList() {
   const query = buddySearch.value.toLowerCase();
-  document.querySelectorAll(".buddy-card").forEach(card => {
-    const name = card.querySelector("strong").innerText.toLowerCase();
-    card.style.display = name.includes(query) ? "block" : "none";
-  });
-});
-
-/***********************
- * ROUTER / NAVIGATION
- ***********************/
-function showScreen(name) {
-  Object.keys(screens).forEach(k => screens[k].classList.add("hidden"));
-  screens[name].classList.remove("hidden");
-  currentScreen = name;
-  window.history.pushState({ screen: name }, "", `#${name}`);
-}
-
-window.addEventListener("popstate", e => {
-  if (e.state && e.state.screen) {
-    showScreen(e.state.screen);
-  }
-});
-
-/***********************
- * BUDDY LIST RENDER
- ***********************/
-function renderBuddies() {
   buddyList.innerHTML = "";
+
   buddies.forEach(buddy => {
+    // Filter by search query
+    if (!buddy.name.toLowerCase().includes(query)) return;
+
+    // Display only matching interests if user selected interests
+    const userInterests = JSON.parse(localStorage.getItem("walkiepal_user_interests") || "[]");
+    const commonInterests = buddy.interests.filter(i => userInterests.includes(i));
+    const matchText = commonInterests.length ? `💡 Matches your interests: ${commonInterests.join(", ")}` : "";
+
     const card = document.createElement("div");
     card.className = "buddy-card";
+
+    const inviteStatus = invites[buddy.name] ? `⏳ ${invites[buddy.name].status}` : "";
 
     card.innerHTML = `
       <div>
         <span class="icon">🥾</span>
         <strong>${buddy.name}</strong>, age ${buddy.age}<br/>
         <span class="muted">${buddy.distance} · ${buddy.location}</span><br/>
+        <span class="muted">${matchText}</span><br/>
+        ${inviteStatus ? `<span class="muted">${inviteStatus}</span><br/>` : ""}
 
         <label for="time-${buddy.name}">Choose time:</label>
         <select id="time-${buddy.name}">
@@ -92,7 +82,32 @@ function renderBuddies() {
   });
 }
 
-renderBuddies();
+/***********************
+ * NAVIGATION WITH HISTORY
+ ***********************/
+function navigateTo(screen) {
+  [screenExplanation, screenFind, screenResponse, screenFeedback].forEach(s => s.classList.add("hidden"));
+  screen.classList.remove("hidden");
+  historyStack.push(screen);
+}
+
+function goBack() {
+  if (historyStack.length > 1) {
+    historyStack.pop();
+    const previous = historyStack[historyStack.length - 1];
+    [screenExplanation, screenFind, screenResponse, screenFeedback].forEach(s => s.classList.add("hidden"));
+    previous.classList.remove("hidden");
+  }
+}
+
+function goToFind() {
+  navigateTo(screenFind);
+  renderBuddyList();
+}
+
+function goToFeedback() {
+  navigateTo(screenFeedback);
+}
 
 /***********************
  * MODAL
@@ -111,18 +126,34 @@ function closeModal() {
 /***********************
  * INVITE FLOW
  ***********************/
+const INVITE_EXPIRE_MS = 5 * 60 * 1000; // 5 minutes
+
 function requestWalk(name) {
   const timeSelect = document.getElementById(`time-${name}`);
   const chosenTime = timeSelect ? timeSelect.value : "Later today";
 
-  invites[name] = { status: "PENDING", time: chosenTime };
+  const expiresAt = Date.now() + INVITE_EXPIRE_MS;
+
+  invites[name] = {
+    status: "PENDING",
+    time: chosenTime,
+    expiresAt
+  };
+
   saveInvites();
 
-  showModal(`Invitation sent to ${name}.\nWaiting for response…`);
+  showModal(`Invitation sent to ${name}.\n\nWaiting for response…`);
+  navigateTo(screenResponse);
+  renderPending(name);
+
+  // Auto-expire invite
   setTimeout(() => {
-    showScreen("response");
-    renderPending(name);
-  }, 400);
+    if (invites[name] && invites[name].status === "PENDING") {
+      invites[name].status = "EXPIRED";
+      saveInvites();
+      renderPending(name);
+    }
+  }, INVITE_EXPIRE_MS);
 }
 
 function renderPending(name) {
@@ -130,43 +161,62 @@ function renderPending(name) {
 
   const card = document.createElement("div");
   card.className = "buddy-card";
+
+  const status = invites[name].status;
+  const time = invites[name].time;
+
+  let statusText = "";
+  if (status === "PENDING") statusText = "⏳ Pending";
+  if (status === "ACCEPTED") statusText = "✅ Accepted";
+  if (status === "DECLINED") statusText = "❌ Declined";
+  if (status === "EXPIRED") statusText = "⏱️ Expired";
+
   card.innerHTML = `
-    ⏳ <strong>Waiting for ${name}</strong><br/>
-    <span class="muted">${invites[name].time} · Status: Pending</span>
+    <strong>${name}</strong><br/>
+    <span class="muted">${time} · Status: ${statusText}</span>
   `;
+
   responseList.appendChild(card);
 
-  setTimeout(() => simulateResponse(name), 2500);
+  if (status === "PENDING") {
+    setTimeout(() => simulateResponse(name), 2500);
+  }
 }
 
 function simulateResponse(name) {
+  if (!invites[name] || invites[name].status !== "PENDING") return;
+
   const accepted = Math.random() > 0.35;
   invites[name].status = accepted ? "ACCEPTED" : "DECLINED";
   saveInvites();
+  renderPending(name);
 
-  responseList.innerHTML = "";
-  accepted ? acceptWalk(name) : declineWalk(name);
+  if (accepted) acceptWalk(name);
+  else declineWalk(name);
 }
 
 /***********************
  * ACCEPT / DECLINE
  ***********************/
 function acceptWalk(name) {
-  showModal(`${name} accepted your walk!`);
+  showModal(`Great! ${name} accepted your walk.`);
 
   const summary = document.createElement("div");
   summary.className = "spot-card";
   summary.innerHTML = `
     🌳 <strong>Walk Confirmed</strong><br/>
     With: ${name}<br/>
-    Where: ${name === "Linda" ? "Mount Vernon Trail, Alexandria" : "Lakeside Park, Arlington"}<br/>
+    Where: ${
+      name === "Linda" ? "Mount Vernon Trail, Alexandria" : "Lakeside Park, Arlington"
+    }<br/>
     Time: ${invites[name].time}
   `;
+
   responseList.appendChild(summary);
 }
 
 function declineWalk(name) {
-  showModal(`${name} can't join this time.`);
+  showModal(`No problem. ${name} can’t join this time.`);
 }
 
 /***********************
@@ -197,7 +247,7 @@ function submitFeedback() {
 
   if (!navigator.onLine) {
     localStorage.setItem("pending_feedback", JSON.stringify(data));
-    showModal("You're offline.\nFeedback will be sent when online.");
+    showModal("You're offline.\nFeedback will send automatically when online.");
     return;
   }
 
@@ -207,7 +257,7 @@ function submitFeedback() {
 function sendFeedback(endpoint, data) {
   fetch(endpoint, {
     method: "POST",
-    headers: { "Content-Type": "application/json", Accept: "application/json" },
+    headers: { "Content-Type": "application/json", "Accept": "application/json" },
     body: JSON.stringify(data)
   })
     .then(res => {
@@ -227,18 +277,15 @@ window.addEventListener("online", () => {
 });
 
 /***********************
- * PWA / SERVICE WORKER
+ * PWA SUPPORT
  ***********************/
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
     navigator.serviceWorker.register("./sw.js")
       .then(() => console.log("SW registered"))
-      .catch(err => console.error("SW registration failed", err));
+      .catch(err => console.error("SW failed", err));
   });
 }
 
-/***********************
- * SCREEN NAVIGATION BUTTONS
- ***********************/
-function goToFind() { showScreen("find"); }
-function goToFeedback() { showScreen("feedback"); }
+// Initialize first screen
+navigateTo(screenExplanation);
