@@ -1,6 +1,17 @@
 /***********************
  * STATE
  ***********************/
+const ROUTES = {
+  explanation: "/",
+  find: "/find",
+  response: "/responses",
+  feedback: "/feedback",
+};
+
+const ROUTES_REVERSE = Object.fromEntries(
+  Object.entries(ROUTES).map(([k, v]) => [v, k])
+);
+
 const AppState = {
   screen: "explanation",
   interests: ["walking", "chess"],
@@ -133,3 +144,4 @@ function saveState() {
  ***********************/
 renderBuddies();
 navigate(AppState.screen);
+
