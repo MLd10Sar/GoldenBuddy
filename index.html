@@ -17,6 +17,7 @@
       Tap 'Next' to continue.
     </p>
   </header>
+
   <section class="section" style="text-align:center;">
     <button onclick="goToFind()">Next ➡️</button>
   </section>
@@ -24,41 +25,61 @@
 
 <!-- SCREEN 1: FIND A WALKING PARTNER -->
 <div id="screen-find" class="app hidden">
+
   <!-- SEARCH BAR -->
   <div class="search-wrapper">
     <span class="search-icon">🔍</span>
-    <input type="text" id="buddy-search" placeholder="Who’s nearby? 🥾"/>
+    <input
+      type="text"
+      id="buddy-search"
+      placeholder="Who’s nearby? 🥾"
+    />
     <button id="toggle-dark-mode">🌙</button>
   </div>
 
   <header class="header">
     <h1>WalkiePal</h1>
-    <p class="muted">Walking together helps people stay active and feel less alone.</p>
-    <p class="subtitle">Find a walking partner nearby in Virginia!</p>
+    <p class="muted">
+      Walking together helps people stay active and feel less alone.
+    </p>
+    <p class="subtitle">
+      Find a walking partner nearby in Virginia!
+    </p>
   </header>
 
   <section class="section">
     <h2>Nearby Buddies</h2>
-    <p class="muted">Instead of phone calls or sign-up sheets, invitations are handled automatically.</p>
+    <p class="muted">
+      Instead of phone calls or sign-up sheets, invitations are handled automatically.
+    </p>
+
     <div id="buddy-list"></div>
+
     <small class="hint">Tap a person to invite them</small>
   </section>
 
   <section class="section">
     <h2>Suggested Walking Places in VA 🌳</h2>
+
     <div class="spot-card">
       🌳 Lakeside Park<br/>
-      <span class="muted">Arlington County · Public · Flat paths · Benches to rest</span>
+      <span class="muted">
+        Arlington County · Public · Flat paths · Benches to rest
+      </span>
     </div>
 
     <div class="spot-card">
       🌲 Mount Vernon Trail<br/>
-      <span class="muted">City of Alexandria · Scenic · Waterfront · Gentle slopes</span>
+      <span class="muted">
+        City of Alexandria · Scenic · Waterfront · Gentle slopes
+      </span>
     </div>
 
     <div class="spot-card">
       🏞️ Riverside Park<br/>
-      <span class="muted">City of Richmond · Wide sidewalks · Dog-friendly</span>
+      <span class="muted">
+        City of Richmond · Wide sidewalks · Dog-friendly
+      </span>
     </div>
   </section>
 </div>
@@ -67,7 +88,9 @@
 <div id="screen-response" class="app hidden">
   <header class="header">
     <h1>WalkiePal</h1>
-    <p class="subtitle">This shows what your buddies would see</p>
+    <p class="subtitle">
+      This shows what your buddies would see
+    </p>
   </header>
 
   <section id="response-list" class="section"></section>
@@ -81,7 +104,9 @@
 <div id="screen-feedback" class="app hidden">
   <header class="header">
     <h1>Feedback</h1>
-    <p class="subtitle">We’d love to hear your thoughts!</p>
+    <p class="subtitle">
+      We’d love to hear your thoughts!
+    </p>
   </header>
 
   <section class="section">
@@ -104,7 +129,11 @@
 
   <section class="section">
     <label>3️⃣ Any suggestions for improvement?</label><br/>
-    <textarea id="q3" rows="3" style="width:100%; border-radius:8px; padding:6px;"></textarea>
+    <textarea
+      id="q3"
+      rows="3"
+      style="width:100%; border-radius:8px; padding:6px;"
+    ></textarea>
   </section>
 
   <section class="section" style="text-align:center;">
