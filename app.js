@@ -148,7 +148,17 @@ function saveState() {
 /***********************
  * INIT
  ***********************/
+(function initFromURL() {
+  const screen =
+    ROUTES_REVERSE[location.pathname] ||
+    AppState.screen ||
+    "explanation";
+
+  navigate(screen, false);
+})();
+
 renderBuddies();
 navigate(AppState.screen);
+
 
 
