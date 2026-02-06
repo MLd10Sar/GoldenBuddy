@@ -31,12 +31,18 @@ const screens = {
   feedback: document.getElementById("screen-feedback"),
 };
 
-function navigate(to) {
+function navigate(to, push = true) {
   Object.values(screens).forEach(s => s.classList.add("hidden"));
   screens[to].classList.remove("hidden");
+
   AppState.screen = to;
   saveState();
+
+  if (push) {
+    history.pushState({ screen: to }, "", ROUTES[to]);
+  }
 }
+
 
 function goToFind() { navigate("find"); }
 function goToFeedback() { navigate("feedback"); }
@@ -144,4 +150,5 @@ function saveState() {
  ***********************/
 renderBuddies();
 navigate(AppState.screen);
+
 
