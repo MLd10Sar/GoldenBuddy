@@ -289,3 +289,14 @@ if ("serviceWorker" in navigator) {
 
 // Initialize first screen
 navigateTo(screenExplanation);
+
+function saveInterests() {
+  const selected = Array.from(
+    document.querySelectorAll('.interest-list input:checked')
+  ).map(i => i.value);
+
+  localStorage.setItem(
+    "walkiepal_user_interests",
+    JSON.stringify(selected)
+  );
+}
