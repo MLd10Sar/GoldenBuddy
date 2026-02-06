@@ -1,45 +1,41 @@
-// MOCK BUDDIES (VA-specific distances)
+/***********************
+ * MOCK BUDDIES (VA)
+ ***********************/
 const buddies = [
-  {
-    name: "Tom",
-    age: 68,
-    distance: "About a 5-minute walk",
-    location: "Arlington County, VA"
-  },
-  {
-    name: "Linda",
-    age: 72,
-    distance: "About a 7-minute walk",
-    location: "City of Alexandria, VA"
-  },
-  {
-    name: "Robert",
-    age: 65,
-    distance: "About a 10-minute walk",
-    location: "City of Richmond, VA"
-  }
+  { name: "Tom", age: 68, distance: "About a 5-minute walk", location: "Arlington County, VA" },
+  { name: "Linda", age: 72, distance: "About a 7-minute walk", location: "City of Alexandria, VA" },
+  { name: "Robert", age: 65, distance: "About a 10-minute walk", location: "City of Richmond, VA" }
 ];
 
+/***********************
+ * GLOBAL STATE
+ ***********************/
+const invites = {}; // { name: { status, time } }
 
 const buddyList = document.getElementById("buddy-list");
 const modal = document.getElementById("modal");
 const modalText = document.getElementById("modal-text");
+
 const screenFind = document.getElementById("screen-find");
-const timeSelect = document.querySelector(`select[id^="time-"]`);
-const chosenTime = timeSelect ? timeSelect.value : "Later today";
 const screenResponse = document.getElementById("screen-response");
 const responseList = document.getElementById("response-list");
 const screenExplanation = document.getElementById("screen-explanation");
 const screenFeedback = document.getElementById("screen-feedback");
 
+/***********************
+ * DARK MODE
+ ***********************/
 const darkModeBtn = document.getElementById("toggle-dark-mode");
 darkModeBtn.addEventListener("click", () => {
   document.body.classList.toggle("dark-mode");
-  darkModeBtn.innerText = document.body.classList.contains("dark-mode") ? "☀️ Light Mode" : "🌙 Dark Mode";
+  darkModeBtn.innerText = document.body.classList.contains("dark-mode")
+    ? "☀️ Light Mode"
+    : "🌙 Dark Mode";
 });
-// --------------------
-// SEARCH FILTER
-// --------------------
+
+/***********************
+ * SEARCH FILTER
+ ***********************/
 const buddySearch = document.getElementById("buddy-search");
 buddySearch.addEventListener("input", () => {
   const query = buddySearch.value.toLowerCase();
@@ -48,10 +44,11 @@ buddySearch.addEventListener("input", () => {
     card.style.display = name.includes(query) ? "block" : "none";
   });
 });
-// --------------------
-// RENDER BUDDY CARDS
-// --------------------
-buddies.forEach((buddy) => {
+
+/***********************
+ * RENDER BUDDY LIST
+ ***********************/
+buddies.forEach(buddy => {
   const card = document.createElement("div");
   card.className = "buddy-card";
 
@@ -59,9 +56,7 @@ buddies.forEach((buddy) => {
     <div>
       <span class="icon">🥾</span>
       <strong>${buddy.name}</strong>, age ${buddy.age}<br/>
-      <span class="muted">
-  ${buddy.distance} · ${buddy.location}
-</span><br/>
+      <span class="muted">${buddy.distance} · ${buddy.location}</span><br/>
 
       <label for="time-${buddy.name}">Choose time:</label>
       <select id="time-${buddy.name}">
@@ -72,12 +67,13 @@ buddies.forEach((buddy) => {
     </div>
     <button onclick="requestWalk('${buddy.name}')">Invite to Walk</button>
   `;
+
   buddyList.appendChild(card);
 });
 
-// --------------------
-// NAVIGATION FUNCTIONS
-// --------------------
+/***********************
+ * NAVIGATION
+ ***********************/
 function goToFind() {
   screenExplanation.classList.add("hidden");
   screenFind.classList.remove("hidden");
@@ -88,9 +84,9 @@ function goToFeedback() {
   screenFeedback.classList.remove("hidden");
 }
 
-// --------------------
-// MODAL FUNCTIONS
-// --------------------
+/***********************
+ * MODAL
+ ***********************/
 function showModal(text) {
   modalText.innerText = text;
   modal.classList.remove("hidden");
@@ -102,70 +98,108 @@ function closeModal() {
   setTimeout(() => modal.classList.add("hidden"), 300);
 }
 
-// --------------------
-// INVITE / RESPONSE LOGIC
-// --------------------
+/***********************
+ * INVITE FLOW (REAL STATES)
+ ***********************/
 function requestWalk(name) {
-  showModal(`You invited ${name} for a walk.\n\nLet's see how they might respond.`);
+  const timeSelect = document.getElementById(`time-${name}`);
+  const chosenTime = timeSelect ? timeSelect.value : "Later today";
 
-  responseList.innerHTML = ""; // clear previous
+  invites[name] = {
+    status: "PENDING",
+    time: chosenTime
+  };
 
-  // Mock responses for 2 buddies
-  const responses = [
-    { name, accepted: true },
-    { name: "Linda", accepted: false }
-  ];
+  saveInvites();
 
-  responses.forEach((res) => {
-    const card = document.createElement("div");
-    card.className = "buddy-card";
-
-    let inner = `<div>🥾 <strong>${res.name} wants to walk with you</strong><br/>
-                 <span class="muted">A ${chosenTime.toLowerCase()} walk later today at ${
-                   res.name === "Linda" ? "Mount Vernon Trail, Alexandria" : "Lakeside Park, Arlington"
-                 }</span></div>`;
-
-    if (res.accepted) {
-      inner += `<div class="actions">
-                  <button class="accept" onclick="acceptWalk('${res.name}')">Yes, I’ll walk</button>
-                  <button class="decline" onclick="declineWalk('${res.name}')">No, thank you</button>
-                </div>`;
-    }
-    card.innerHTML = inner;
-    responseList.appendChild(card);
-  });
+  showModal(`Invitation sent to ${name}.\n\nWaiting for response…`);
 
   setTimeout(() => {
-  screenFind.classList.add("hidden");
-  screenResponse.classList.remove("hidden");
-}, 400);
-
+    screenFind.classList.add("hidden");
+    screenResponse.classList.remove("hidden");
+    renderPending(name);
+  }, 400);
 }
 
-// --------------------
-// ACCEPT / DECLINE
-// --------------------
+function renderPending(name) {
+  responseList.innerHTML = "";
+
+  const card = document.createElement("div");
+  card.className = "buddy-card";
+
+  card.innerHTML = `
+    ⏳ <strong>Waiting for ${name}</strong><br/>
+    <span class="muted">
+      ${invites[name].time} · Status: Pending
+    </span>
+  `;
+
+  responseList.appendChild(card);
+
+  // Simulate response delay
+  setTimeout(() => simulateResponse(name), 2500);
+}
+
+function simulateResponse(name) {
+  const accepted = Math.random() > 0.35;
+
+  invites[name].status = accepted ? "ACCEPTED" : "DECLINED";
+  saveInvites();
+
+  responseList.innerHTML = "";
+
+  if (accepted) {
+    acceptWalk(name);
+  } else {
+    declineWalk(name);
+  }
+}
+
+/***********************
+ * ACCEPT / DECLINE
+ ***********************/
 function acceptWalk(name) {
-  showModal(`Great! ${name} will walk with you.\n\nHere’s the summary:`);
+  showModal(`Great! ${name} accepted your walk.`);
 
   const summary = document.createElement("div");
   summary.className = "spot-card";
   summary.innerHTML = `
     🌳 <strong>Walk Confirmed</strong><br/>
     With: ${name}<br/>
-    Where: ${name === "Linda" ? "Mount Vernon Trail, Alexandria" : "Lakeside Park, Arlington"}<br/>
-    Time: Later today
+    Where: ${
+      name === "Linda"
+        ? "Mount Vernon Trail, Alexandria"
+        : "Lakeside Park, Arlington"
+    }<br/>
+    Time: ${invites[name].time}
   `;
+
   responseList.appendChild(summary);
 }
 
 function declineWalk(name) {
-  showModal(`No problem. ${name} won’t join this time.\n\nYou can try inviting someone else.`);
+  showModal(`No problem. ${name} can’t join this time.`);
 }
 
-// --------------------
-// FEEDBACK SUBMISSION
-// --------------------
+/***********************
+ * OFFLINE SUPPORT
+ ***********************/
+function saveInvites() {
+  localStorage.setItem("walkiepal_invites", JSON.stringify(invites));
+}
+
+function loadInvites() {
+  const saved = localStorage.getItem("walkiepal_invites");
+  if (saved) {
+    Object.assign(invites, JSON.parse(saved));
+  }
+}
+
+loadInvites();
+
+/***********************
+ * FEEDBACK (OFFLINE SAFE)
+ ***********************/
 function submitFeedback() {
   const data = {
     q1: document.getElementById("q1").value,
@@ -173,22 +207,44 @@ function submitFeedback() {
     q3: document.getElementById("q3").value
   };
 
-  // Formspree endpoint
-  const formEndpoint = "https://formspree.io/f/mdaebjqn"; // <-- replace with your Formspree URL
+  const endpoint = "https://formspree.io/f/mdaebjqn";
 
-  fetch(formEndpoint, {
+  if (!navigator.onLine) {
+    localStorage.setItem("pending_feedback", JSON.stringify(data));
+    showModal("You're offline.\nFeedback will send automatically when online.");
+    return;
+  }
+
+  sendFeedback(endpoint, data);
+}
+
+function sendFeedback(endpoint, data) {
+  fetch(endpoint, {
     method: "POST",
     headers: { "Content-Type": "application/json", "Accept": "application/json" },
     body: JSON.stringify(data)
   })
-  .then(response => {
-    if (response.ok) {
-      showModal("Thank you! Your feedback has been sent ✅");
-    } else {
-      showModal("Oops! There was an error sending feedback.");
-    }
-  })
-  .catch(error => showModal("Oops! There was an error sending feedback."));
+    .then(res => {
+      if (res.ok) {
+        showModal("Thank you! Feedback sent ✅");
+        localStorage.removeItem("pending_feedback");
+      } else {
+        showModal("Error sending feedback.");
+      }
+    })
+    .catch(() => showModal("Network error."));
 }
 
+window.addEventListener("online", () => {
+  const pending = localStorage.getItem("pending_feedback");
+  if (pending) {
+    sendFeedback("https://formspree.io/f/mdaebjqn", JSON.parse(pending));
+  }
+});
 
+/***********************
+ * PWA: SERVICE WORKER
+ ***********************/
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("sw.js");
+}
