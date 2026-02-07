@@ -251,8 +251,17 @@ function closeModal() {
  * INIT
  ***********************/
 (function initFromURL() {
-  // Default to explanation screen if saved state is invalid
   const screenFromURL = ROUTES_REVERSE[location.pathname];
-  const validScreen = screenFromURL || (AppState.screen && ROUTES[AppState.screen]) ? AppState.screen : "explanation";
-  navigate(validScreen, false);
+
+  // Only allow explanation or find screen on initial load
+  const entryScreens = ["explanation", "find"];
+  let initialScreen = "explanation";
+
+  if (screenFromURL && entryScreens.includes(screenFromURL)) {
+    initialScreen = screenFromURL;
+  }
+
+  navigate(initialScreen, false);
 })();
+
+
