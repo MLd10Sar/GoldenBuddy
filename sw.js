@@ -1,4 +1,4 @@
-const CACHE_NAME = "walkiepal-cache-v2";
+const CACHE_NAME = "goldenbuddy-cache-v2";
 const STATIC_ASSETS = [
   "/", // root
   "/index.html",
@@ -65,3 +65,4 @@ self.addEventListener("message", event => {
     self.skipWaiting();
   }
 });
+
