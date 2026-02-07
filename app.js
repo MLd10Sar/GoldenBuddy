@@ -18,7 +18,7 @@ const AppState = {
 };
 
 const invites = JSON.parse(
-  localStorage.getItem("walkiepal_invites") || "{}"
+  localStorage.getItem("goldenbuddy_invites") || "{}"
 );
 
 /***********************
@@ -139,10 +139,10 @@ setInterval(() => {
  * STORAGE
  ***********************/
 function saveInvites() {
-  localStorage.setItem("walkiepal_invites", JSON.stringify(invites));
+  localStorage.setItem("goldenbuddy_invites", JSON.stringify(invites));
 }
 function saveState() {
-  localStorage.setItem("walkiepal_state", JSON.stringify(AppState));
+  localStorage.setItem("goldenbuddy_state", JSON.stringify(AppState));
 }
 
 /***********************
@@ -159,6 +159,7 @@ function saveState() {
 
 renderBuddies();
 navigate(AppState.screen);
+
 
 
 
