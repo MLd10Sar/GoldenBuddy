@@ -12,12 +12,26 @@ const ROUTES_REVERSE = Object.fromEntries(
   Object.entries(ROUTES).map(([k, v]) => [v, k])
 );
 
-const AppState = JSON.parse(localStorage.getItem("goldenbuddy_state") || JSON.stringify({
-  screen: "explanation",
-  interests: ["walking", "chess"],
-}));
+// Restore AppState safely
+let AppState;
+try {
+  const savedState = JSON.parse(localStorage.getItem("goldenbuddy_state"));
+  if (savedState && ROUTES[savedState.screen]) {
+    AppState = savedState;
+  } else {
+    AppState = { screen: "explanation", interests: ["walking", "chess"] };
+  }
+} catch {
+  AppState = { screen: "explanation", interests: ["walking", "chess"] };
+}
 
-const invites = JSON.parse(localStorage.getItem("goldenbuddy_invites") || "{}");
+// Restore invites safely
+let invites;
+try {
+  invites = JSON.parse(localStorage.getItem("goldenbuddy_invites") || "{}");
+} catch {
+  invites = {};
+}
 
 /***********************
  * ROUTER
@@ -31,7 +45,7 @@ const screens = {
 
 function navigate(to, push = true) {
   Object.values(screens).forEach(s => s.classList.add("hidden"));
-  screens[to].classList.remove("hidden");
+  if (screens[to]) screens[to].classList.remove("hidden");
 
   AppState.screen = to;
   saveState();
@@ -83,12 +97,8 @@ function renderBuddies() {
       const card = document.createElement("div");
       card.className = "buddy-card";
 
-      // Determine if there is a pending or accepted invite
       const invite = invites[buddy.name];
-      let inviteText = "";
-      if (invite) {
-        inviteText = `Status: ${invite.status}`;
-      }
+      let inviteText = invite ? `Status: ${invite.status}` : "";
 
       card.innerHTML = `
         🥾 <strong>${buddy.name}</strong> · ${buddy.age}<br/>
@@ -109,13 +119,12 @@ function requestWalk(name) {
   invites[name] = {
     status: "PENDING",
     createdAt: now,
-    expiresAt: now + 60 * 60 * 1000, // 1 hour
+    expiresAt: now + 60 * 60 * 1000,
   };
   saveInvites();
   renderResponses();
   navigate("response");
 
-  // Simulate buddy response after a delay
   setTimeout(() => simulateResponse(name), 3000);
 }
 
@@ -123,7 +132,7 @@ function simulateResponse(name) {
   const invite = invites[name];
   if (!invite || invite.status !== "PENDING") return;
 
-  const accepted = Math.random() > 0.4; // ~60% chance accepted
+  const accepted = Math.random() > 0.4;
   invite.status = accepted ? "ACCEPTED" : "DECLINED";
   saveInvites();
   renderResponses();
@@ -143,10 +152,7 @@ function renderResponses() {
     else if (invite.status === "DECLINED") statusText = "❌ Declined";
     else if (invite.status === "EXPIRED") statusText = "⌛ Expired";
 
-    div.innerHTML = `
-      <strong>${name}</strong><br/>
-      <span class="muted">${statusText}</span>
-    `;
+    div.innerHTML = `<strong>${name}</strong><br/><span class="muted">${statusText}</span>`;
     list.appendChild(div);
   });
 }
@@ -165,8 +171,10 @@ setInterval(() => {
     }
   });
 
-  if (dirty) renderResponses();
-  if (dirty) saveInvites();
+  if (dirty) {
+    renderResponses();
+    saveInvites();
+  }
 }, 30000);
 
 /***********************
@@ -243,6 +251,8 @@ function closeModal() {
  * INIT
  ***********************/
 (function initFromURL() {
-  const screen = ROUTES_REVERSE[location.pathname] || AppState.screen || "explanation";
-  navigate(screen, false);
+  // Default to explanation screen if saved state is invalid
+  const screenFromURL = ROUTES_REVERSE[location.pathname];
+  const validScreen = screenFromURL || (AppState.screen && ROUTES[AppState.screen]) ? AppState.screen : "explanation";
+  navigate(validScreen, false);
 })();
